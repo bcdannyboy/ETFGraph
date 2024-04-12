@@ -1,10 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
-import requests # type: ignore
 import sys
 import time
 import os
 from threading import Semaphore, Timer
+
+import requests # type: ignore
 
 from .utils import analyze_etf_attributes
 

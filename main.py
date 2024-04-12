@@ -38,12 +38,12 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, g
             print("[+] Loaded graph from file.")
         except Exception as e:
             print(f"Error loading the graph from file: {e}")
-            return
+            return None
     else:
         etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(num_etf, FMPKey, rate_limit=rate_limit))
         if etf_graph is None:
             print("Failed to create graph. Exiting.")
-            return
+            return None
 
     communities = graph.detect_communities_louvain(etf_graph)
     community_size = {com: len([node for node in communities if communities[node] == com]) for com in set(communities.values())}
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
     G = init_etfgraph(args.num, args.display, args.rate_limit, args.output, args.load_graph)
     
-    if args.save_graph:
+    if args.save_graph and G is not None:
         print(f"[+] Saving graph to {args.save_graph}")
         with open(args.save_graph, 'wb') as f:
             pickle.dump(G, f)
