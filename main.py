@@ -7,7 +7,7 @@ import src.graph as graph
 import src.viz as viz
 import pickle
 
-def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None):
+def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, graph_file=None):
     """
     init_etfgraph initializes and analyzes the ETF graph with detailed statistics and community analysis.
     It detects communities, identifies the largest ones, and analyzes the top stocks within these communities.
@@ -19,19 +19,28 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None):
         display (bool): Display the graph visualization.
         rate_limit (int): The rate limit for API requests (default 150/minute).
         output_file (str): Output file path for saving the results in JSON format.
+        graph_file (str): Optional path to a pickled graph file to load instead of pulling data.
         
     Returns:
         nx.Graph: The ETF graph.
     
     Output:
         The function prints the analysis results and saves them to a JSON file if specified.
-    """    
+    """
     results = {}
-    etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(num_etf, FMPKey, rate_limit=rate_limit))
-    
-    if etf_graph is None:
-        print("Failed to create graph. Exiting.")
-        return
+    if graph_file:
+        try:
+            with open(graph_file, 'rb') as f:
+                etf_graph = pickle.load(f)
+            print("[+] Loaded graph from file.")
+        except Exception as e:
+            print(f"Error loading the graph from file: {e}")
+            return
+    else:
+        etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(num_etf, FMPKey, rate_limit=rate_limit))
+        if etf_graph is None:
+            print("Failed to create graph. Exiting.")
+            return
 
     communities = graph.detect_communities_louvain(etf_graph)
     community_size = {com: len([node for node in communities if communities[node] == com]) for com in set(communities.values())}
@@ -67,12 +76,10 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None):
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=4)
         print(f"[+] Results saved to {output_file}")
-        return etf_graph
 
     if display:
         print("[+] Visualizing ETF graph...")
         viz.plot_graph(etf_graph, communities)
-        return etf_graph
 
     return etf_graph
   
@@ -85,6 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--rate_limit', type=int, help='The rate limit for API requests (default 150/minute)', default=150)
     parser.add_argument('-o', '--output', type=str, help='Output file path for saving the results in JSON format')
     parser.add_argument('-g', '--save_graph', type=str, help='Output file path for saving the graph in pickle format')
+    parser.add_argument('-l', '--load_graph', type=str, help='Input file path for loading a pickled graph')
     args = parser.parse_args()
     
     FMPKey = os.getenv("FMPKey")
@@ -92,7 +100,7 @@ if __name__ == '__main__':
         print("FMPKey not found. Exiting.")
         exit(-1)
 
-    G = init_etfgraph(args.num, args.display, args.rate_limit, args.output)
+    G = init_etfgraph(args.num, args.display, args.rate_limit, args.output, args.load_graph)
     
     if args.save_graph:
         print(f"[+] Saving graph to {args.save_graph}")

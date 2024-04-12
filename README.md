@@ -54,10 +54,23 @@ You can specify various options through command-line arguments:
 - `-r, --rate_limit <int>`: Set the API request rate limit (default 150/minute).
 - `-o, --output <path>`: Save the results of the analysis to a JSON file.
 - `-g, --save_graph <path>`: Save the graph object for later use or analysis in pickle format.
+- `-l --load_graph <path>`: Load a saved graph object from a pickle file.
 
-Example:
+#### Examples:
+
+To analyze 50 ETFs, display the graph, set the rate limit to 200 requests per minute, and save the results to a JSON file and graph object, use the following command:
 ```bash
 python main.py -n 50 -d -r 200 -o output.json -g graph.pkl
+```
+
+To load a saved graph object and analyze the data without fetching new information, run:
+```bash
+python main.py -l graph.pkl
+```
+
+To analyze 100 ETFs at the default rate limit with only console output, execute:
+```bash
+python main.py -n 100
 ```
 
 ### Roadmap
