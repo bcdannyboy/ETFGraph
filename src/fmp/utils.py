@@ -4,6 +4,12 @@ import re
 def analyze_etf_attributes(etf_name):
     """
     analyze_etf_attributes analyzes the name of an ETF to determine if it is leveraged or inversed.
+    
+    args:
+        etf_name (str): The name of the ETF to analyze.
+        
+    returns:
+        tuple(leveraged=bool, inversed=bool): A tuple containing two boolean values, the first indicating if the ETF is leveraged and the second indicating if the ETF is inversed.
     """
     # Patterns to identify leveraged ETFs
     leveraged_patterns = [
