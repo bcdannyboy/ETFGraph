@@ -1,8 +1,18 @@
-import matplotlib.pyplot as plt
-import networkx as nx
-import numpy as np
+import matplotlib.pyplot as plt # type: ignore
+import networkx as nx # type: ignore
+import numpy as np # type: ignore
 
 def plot_graph(G, partition=None):
+    """
+    plot_graph plots the provided NetworkX graph with optional partitioning.
+    
+    Args:
+        G (nx.Graph): The NetworkX graph to plot.
+        partition (dict, optional): A dictionary containing node names as keys and their community as values.
+        
+    Returns:
+        None: The function plots the graph but does not return anything.
+    """
     k_value = 1 / np.sqrt(G.number_of_nodes()) * 3  # Scale k with the inverse square root of the number of nodes, multiplied for more spacing
 
     # Position nodes using an improved spring layout

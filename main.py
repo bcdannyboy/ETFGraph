@@ -1,11 +1,14 @@
 import json
-from dotenv import load_dotenv
 import os
-import argparse
-import src.fmp as fmp
-import src.graph as graph
-import src.viz as viz
 import pickle
+import sys
+import argparse
+
+from dotenv import load_dotenv # type: ignore
+from src import fmp
+from src import graph
+from src import viz
+
 
 def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, graph_file=None):
     """
@@ -98,10 +101,13 @@ if __name__ == '__main__':
     FMPKey = os.getenv("FMPKey")
     if FMPKey is None:
         print("FMPKey not found. Exiting.")
-        exit(-1)
+        sys.exit(-1)
 
     G = init_etfgraph(args.num, args.display, args.rate_limit, args.output, args.load_graph)
     
     if args.save_graph:
         print(f"[+] Saving graph to {args.save_graph}")
-        pickle.dump(G, open(args.save_graph, 'wb'))
+        with open(args.save_graph, 'wb') as f:
+            pickle.dump(G, f)
+            
+    sys.exit(0)

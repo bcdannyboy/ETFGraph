@@ -1,4 +1,4 @@
-import networkx as nx
+import networkx as nx # type: ignore
 
 def create_graph_from_fmp(fmp_details):
     """

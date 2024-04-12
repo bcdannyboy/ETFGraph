@@ -1,4 +1,3 @@
-import networkx as nx
 
 def stocks_with_most_weight(G):
     """

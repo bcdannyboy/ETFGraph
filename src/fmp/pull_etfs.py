@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
-import requests
+import requests # type: ignore
 import sys
 import time
 import os
@@ -28,7 +28,10 @@ def fetch_etf_holdings(etf, fmp_key):
     """
     Fetches holdings for a specific ETF and returns the data.
     """
-    semaphore.acquire()  # Wait to acquire the semaphore
+    
+    with semaphore as s:
+        s.acquire()  # Ensure we don't exceed the rate limit
+
     holdings_url = f"https://financialmodelingprep.com/api/v3/etf-holder/{etf['symbol']}?apikey={fmp_key}"
     try:
         response = requests.get(holdings_url, timeout=TIMEOUT)
@@ -40,10 +43,10 @@ def fetch_etf_holdings(etf, fmp_key):
                 "inverse": inverse,
                 "holdings": response.json()
             }
-        else:
-            error_msg = f"[!] Failed to get ETF positions for {etf['symbol']} - Status code: {response.status_code}, Response: {response.text}"
-            print(error_msg)
-            return etf['symbol'], None
+
+        error_msg = f"[!] Failed to get ETF positions for {etf['symbol']} - Status code: {response.status_code}, Response: {response.text}"
+        print(error_msg)
+        return etf['symbol'], None
     except requests.RequestException as e:
         print(f"[!] Request failed for {etf['symbol']}: {e}")
         return etf['symbol'], None
