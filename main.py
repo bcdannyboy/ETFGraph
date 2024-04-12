@@ -91,7 +91,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--display', action='store_true', help='Display the graph visualization', default=False)
     parser.add_argument('-r', '--rate_limit', type=int, help='The rate limit for API requests (default 150/minute)', default=150)
     parser.add_argument('-o', '--output', type=str, help='Output file path for saving the results in JSON format')
-    parser.add_argument('-g', '--save_graph', type=str, help='Output file path for saving the graph in pickle format')
+    parser.add_argument('-s', '--save_graph', type=str, help='Output file path for saving the graph in pickle format')
     parser.add_argument('-l', '--load_graph', type=str, help='Input file path for loading a pickled graph')
     args = parser.parse_args()
     
