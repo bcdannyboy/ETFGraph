@@ -11,6 +11,10 @@ def create_graph_from_fmp(fmp_details):
         nx.Graph: A NetworkX graph representing the ETFs and their positions.
     """
     
+    if fmp_details is None:
+        print("[!] Failed to create graph from FMP details: No details provided")
+        return None
+    
     G = nx.Graph()
 
     # Loop through each ETF and their positions

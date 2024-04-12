@@ -10,12 +10,8 @@ def init_etfgraph():
     init_etfgraph initializes the ETF graph analysis tool.
     """
     print(f"Analyzing {args.num if args.num != -1 else 'all' } ETF{'s' if args.num != 1 else ''}...")
-        
-    etf_details = {}
-    for etf in etfs_to_analyze:
-        etf_details[etf] = fmp.pull_etf_positions(etf, FMPKey)
-        
-    etf_graph = graph.create_graph_from_fmp(etf_details)
+    
+    etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(args.num, FMPKey))
         
 if __name__ == '__main__':
     load_dotenv()
