@@ -5,7 +5,7 @@ def create_graph_from_fmp(fmp_details):
     create_graph_from_fmp creates a graph from the ETF positions returned by the Financial Modeling Prep API.
     
     Args:
-        fmp_details (map): A dictionary containing the ETFs mapped to the list of positions as returned by the API.
+        fmp_details (dict): A dictionary containing the ETF positions as returned by the API.
         
     Returns:
         nx.Graph: A NetworkX graph representing the ETFs and their positions.
@@ -17,23 +17,27 @@ def create_graph_from_fmp(fmp_details):
     
     G = nx.Graph()
 
-    # Loop through each ETF and their positions
-    for etf, positions in fmp_details.items():
+    # Loop through each ETF and their details
+    for etf_symbol, etf_data in fmp_details.items():
+        # Extract ETF symbol and its holdings
+        leveraged = etf_data['leveraged']
+        inverse = etf_data['inverse']
+        holdings = etf_data['holdings']
+        
         # Add ETF node if it's not already added
-        if not G.has_node(etf):
-            G.add_node(etf, type='ETF')
+        if not G.has_node(etf_symbol):
+            G.add_node(etf_symbol, type='ETF', leveraged=leveraged, inverse=inverse)
 
-        # Loop through each stock in the positions list
-        for position in positions:
-            stock = position['asset']
-            weight = position['weightPercentage']
+        # Loop through each stock in the holdings
+        for stock in holdings:
+            stock_symbol = stock['asset']
+            weight = stock['weightPercentage']
 
             # Add stock node if it's not already added
-            if not G.has_node(stock):
-                G.add_node(stock, type='Stock')
+            if not G.has_node(stock_symbol):
+                G.add_node(stock_symbol, type='Stock')
 
             # Add an edge between the ETF and the stock
-            # The weight on the edge is the weightPercentage of the stock in the ETF
-            G.add_edge(etf, stock, weight=weight)
+            G.add_edge(etf_symbol, stock_symbol, weight=weight)
 
     return G

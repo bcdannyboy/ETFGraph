@@ -9,8 +9,9 @@ ETFGraph requires a Financial Modeling Prep API key to access financial data for
 ## Roadmap
 
 - [x] Pull Data & Generate Graph
-- [ ] Graph Visualization
-- [ ] Community Detection / Clustering
+- [x] Graph Visualization
+- [x] Community Detection / Clustering
 - [ ] PageRank Analysis
 - [ ] ETF Similarity Analysis
+- [x] Link Analysis
 - [ ] Link Prediction

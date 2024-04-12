@@ -20,6 +20,9 @@ def analyze_etf_attributes(etf_name):
     inversed_patterns = [
         r'\b(?:inverse|short|bear|-\d+x)\b'
     ]
+    
+    if etf_name is None:
+        return False, False
 
     # Convert the ETF name to lower case to ensure case-insensitive matching
     etf_name_lower = etf_name.lower()
