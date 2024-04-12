@@ -6,16 +6,17 @@ import src.fmp as fmp
 import src.graph as graph
 import src.viz as viz
 
-def init_etfgraph(display=False):
+def init_etfgraph(display=False, rate_limit=150):
     """
     init_etfgraph initializes the ETF graph analysis tool.
     
     Args:
         display (bool): A boolean indicating whether to display the graph visualization.
+        rate_limit (int): The rate limit for API requests (default 150/minute).
     """
     print(f"[+] Analyzing {args.num if args.num != -1 else 'all' } ETF{'s' if args.num != 1 else ''}...")
     
-    etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(args.num, FMPKey))
+    etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(args.num, FMPKey, rate_limit=rate_limit))
         
     print(f"[+] Analyzed {args.num} ETF{'s' if args.num != 1 else ''} and {'their' if args.num != 1 else 'its'} positions")
     graph_communities = graph.detect_communities_louvain(etf_graph)
@@ -67,6 +68,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="ETF Position Graph Analysis Tool")
     parser.add_argument('-n', '--num', type=int, help='The number of ETFs to analyze, if not provided all will be used', default=-1)
     parser.add_argument('-d', '--display', action='store_true', help='Display the graph visualization')
+    parser.add_argument('-r', '--rate_limit', type=int, help='The rate limit for API requests (default 150/minute)', default=150)
     args = parser.parse_args()
     
     FMPKey = os.getenv("FMPKey")
@@ -75,4 +77,4 @@ if __name__ == '__main__':
         print("FMPKey not found")
         exit(-1)
         
-    init_etfgraph()
+    init_etfgraph(args.display, args.rate_limit)

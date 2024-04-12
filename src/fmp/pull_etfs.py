@@ -3,18 +3,18 @@ import random
 import requests
 import sys
 import time
+import os
 
 from .utils import analyze_etf_attributes
 
 RATE_LIMIT = 150  # Maximum requests per minute
-REQUEST_INTERVAL = 60 / RATE_LIMIT  # Interval between requests in seconds
 TIMEOUT = 10  # Timeout for HTTP requests in seconds
 
 def fetch_etf_holdings(etf, fmp_key):
     """
     Fetches holdings for a specific ETF and returns the data.
     """
-    time.sleep(REQUEST_INTERVAL)  # Sleep to ensure even distribution of requests
+    time.sleep(60/RATE_LIMIT)  # Sleep to ensure even distribution of requests
     holdings_url = f"https://financialmodelingprep.com/api/v3/etf-holder/{etf['symbol']}?apikey={fmp_key}"
     try:
         response = requests.get(holdings_url, timeout=TIMEOUT)
@@ -34,10 +34,12 @@ def fetch_etf_holdings(etf, fmp_key):
         print(f"[!] Request failed for {etf['symbol']}: {e}")
         return etf['symbol'], None
 
-def pull_etf_positions(num, fmp_key):
+def pull_etf_positions(num, fmp_key, rate_limit=RATE_LIMIT):
     """
     Fetch ETF positions using a fixed number of threads, displaying progress and adhering to rate limits.
     """
+    
+    RATE_LIMIT = rate_limit
     list_url = f"https://financialmodelingprep.com/api/v3/etf/list?apikey={fmp_key}"
     response = requests.get(list_url, timeout=TIMEOUT)
     if response.status_code == 200:
@@ -48,9 +50,9 @@ def pull_etf_positions(num, fmp_key):
         total_etfs = len(etfs_to_analyze)
         etfs_processed = 0
 
-        print("[+] Starting ETF analysis...")
+        print(f"[+] Starting ETF analysis at a rate of {RATE_LIMIT} requests per minute...")
         
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=os.cpu_count()*2) as executor:
             futures = {executor.submit(fetch_etf_holdings, etf, fmp_key): etf for etf in etfs_to_analyze}
             for future in as_completed(futures):
                 etf_symbol, data = future.result()
