@@ -40,4 +40,11 @@ def create_graph_from_fmp(fmp_details):
             # Add an edge between the ETF and the stock
             G.add_edge(etf_symbol, stock_symbol, weight=weight)
 
+    # remove negative weights
+    for u, v, data in G.edges(data=True):
+        if data['weight'] < 0:
+            print(f"Negative weight found: {u}-{v} with weight {data['weight']}")
+            data['weight'] = abs(data['weight'])  # or set it to a default positive value
+
+
     return G
