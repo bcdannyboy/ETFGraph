@@ -16,17 +16,17 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, g
     It detects communities, identifies the largest ones, and analyzes the top stocks within these communities.
     It also performs various other analyses including ETF types, sentiment, and PageRank.
     Optionally outputs the results to a JSON file.
-    
+
     Args:
         num_etf (int): The number of ETFs to analyze, if not provided all will be used.
         display (bool): Display the graph visualization.
         rate_limit (int): The rate limit for API requests (default 150/minute).
         output_file (str): Output file path for saving the results in JSON format.
         graph_file (str): Optional path to a pickled graph file to load instead of pulling data.
-        
+
     Returns:
         nx.Graph: The ETF graph.
-    
+
     Output:
         The function prints the analysis results and saves them to a JSON file if specified.
     """
@@ -45,6 +45,8 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, g
             print("Failed to create graph. Exiting.")
             return None
 
+    print("[+] ETF Graph created successfully.")
+    print("[+] Detecting communities in the graph...")
     communities = graph.detect_communities_louvain(etf_graph)
     community_size = {com: len([node for node in communities if communities[node] == com]) for com in set(communities.values())}
     largest_communities = sorted(community_size.items(), key=lambda x: x[1], reverse=True)[:5]
@@ -75,6 +77,18 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, g
     results['top_stocks_by_inclusion'] = most_inclusions
     results['top_stocks_by_pagerank'] = top_pagerank
 
+    print("Top 10 stocks by weight:")
+    for stock, weight in most_weight:
+        print(f"  {stock}: {weight:.2f}")
+
+    print("Top 10 stocks by inclusions:")
+    for stock, inclusions in most_inclusions:
+        print(f"  {stock}: {inclusions}")
+
+    print("Top 10 stocks by PageRank:")
+    for stock, score in top_pagerank:
+        print(f"  {stock}: {score:.4f}")
+
     if output_file:
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=4)
@@ -85,7 +99,7 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, g
         viz.plot_graph(etf_graph, communities)
 
     return etf_graph
-  
+
 if __name__ == '__main__':
     load_dotenv()
 
@@ -97,17 +111,17 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--save_graph', type=str, help='Output file path for saving the graph in pickle format')
     parser.add_argument('-l', '--load_graph', type=str, help='Input file path for loading a pickled graph')
     args = parser.parse_args()
-    
+
     FMPKey = os.getenv("FMPKey")
     if FMPKey is None:
         print("FMPKey not found. Exiting.")
         sys.exit(-1)
 
     G = init_etfgraph(args.num, args.display, args.rate_limit, args.output, args.load_graph)
-    
+    print("[+] Analysis complete.")
     if args.save_graph and G is not None:
         print(f"[+] Saving graph to {args.save_graph}")
         with open(args.save_graph, 'wb') as f:
             pickle.dump(G, f)
-            
+
     sys.exit(0)

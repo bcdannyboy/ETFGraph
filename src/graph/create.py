@@ -3,18 +3,18 @@ import networkx as nx # type: ignore
 def create_graph_from_fmp(fmp_details):
     """
     create_graph_from_fmp creates a graph from the ETF positions returned by the Financial Modeling Prep API.
-    
+
     Args:
         fmp_details (dict): A dictionary containing the ETF positions as returned by the API.
-        
+
     Returns:
         nx.Graph: A NetworkX graph representing the ETFs and their positions.
     """
-    
+
     if fmp_details is None:
         print("[!] Failed to create graph from FMP details: No details provided")
         return None
-    
+
     G = nx.Graph()
 
     # Loop through each ETF and their details
@@ -23,7 +23,7 @@ def create_graph_from_fmp(fmp_details):
         leveraged = etf_data['leveraged']
         inverse = etf_data['inverse']
         holdings = etf_data['holdings']
-        
+
         # Add ETF node if it's not already added
         if not G.has_node(etf_symbol):
             G.add_node(etf_symbol, type='ETF', leveraged=leveraged, inverse=inverse)
