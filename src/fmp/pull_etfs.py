@@ -80,7 +80,7 @@ def pull_etf_positions(num, fmp_key, rate_limit=RATE_LIMIT):
                     etf_details[etf_symbol] = data
 
         timer.cancel()  # Stop the timer when done
-        print("\n[+] Completed analysis for all ETFs.")
+        print(f"\n[+] Completed analysis for {etfs_processed} ETF{'s' if etfs_processed != 1 else ''}")
         return etf_details
     else:
         print(f"[!] Failed to retrieve ETF list - Status code: {response.status_code}, Response: {response.text}")

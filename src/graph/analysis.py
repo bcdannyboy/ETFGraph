@@ -27,33 +27,6 @@ def stocks_with_most_weight(G):
     sorted_stocks = sorted(stock_weights.items(), key=lambda item: item[1], reverse=True)
     return sorted_stocks
 
-def stocks_with_least_weight(G):
-    """
-    stocks_with_least_weight returns a list of stocks sorted by the total weight of their connections.
-    
-    Args:
-        G (nx.Graph): The graph to analyze.
-        
-    Returns:
-        list: A list of tuples containing the stock name and the total weight of its connections, sorted in ascending order.
-    """
-    stock_weights = {}
-    for u, v, data in G.edges(data=True):
-        if G.nodes[u]['type'] == 'Stock':
-            stock = u
-        elif G.nodes[v]['type'] == 'Stock':
-            stock = v
-        else:
-            continue
-        
-        if stock not in stock_weights:
-            stock_weights[stock] = 0
-        stock_weights[stock] += data['weight']
-    
-    # Sort stocks by total weight (ascending order)
-    sorted_stocks = sorted(stock_weights.items(), key=lambda item: item[1])
-    return sorted_stocks
-
 def stocks_with_most_inclusions(G):
     """
     stocks_with_most_inclusions returns a list of stocks sorted by the number of inclusions in ETFs.
@@ -71,25 +44,6 @@ def stocks_with_most_inclusions(G):
     
     # Sort stocks by the number of inclusions
     sorted_stocks = sorted(stock_counts.items(), key=lambda item: item[1], reverse=True)
-    return sorted_stocks
-
-def stocks_with_least_inclusions(G):
-    """
-    stocks_with_least_inclusions returns a list of stocks sorted by the number of inclusions in ETFs.
-    
-    Args:
-        G (nx.Graph): The graph to analyze.
-        
-    Returns:
-        list: A list of tuples containing the stock name and the number of inclusions in ETFs, sorted in ascending order.
-    """
-    stock_counts = {}
-    for node, data in G.nodes(data=True):
-        if data['type'] == 'Stock':
-            stock_counts[node] = G.degree(node)
-    
-    # Sort stocks by the number of inclusions (ascending order)
-    sorted_stocks = sorted(stock_counts.items(), key=lambda item: item[1])
     return sorted_stocks
 
 def analyze_etf_types(G):

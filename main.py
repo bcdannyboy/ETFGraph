@@ -1,80 +1,99 @@
-import random
+import json
 from dotenv import load_dotenv
 import os
 import argparse
 import src.fmp as fmp
 import src.graph as graph
 import src.viz as viz
+import pickle
 
-def init_etfgraph(display=False, rate_limit=150):
+def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None):
     """
-    init_etfgraph initializes the ETF graph analysis tool.
+    init_etfgraph initializes and analyzes the ETF graph with detailed statistics and community analysis.
+    It detects communities, identifies the largest ones, and analyzes the top stocks within these communities.
+    It also performs various other analyses including ETF types, sentiment, and PageRank.
+    Optionally outputs the results to a JSON file.
     
     Args:
-        display (bool): A boolean indicating whether to display the graph visualization.
+        num_etf (int): The number of ETFs to analyze, if not provided all will be used.
+        display (bool): Display the graph visualization.
         rate_limit (int): The rate limit for API requests (default 150/minute).
-    """
-    print(f"[+] Analyzing {args.num if args.num != -1 else 'all' } ETF{'s' if args.num != 1 else ''}...")
-    
-    etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(args.num, FMPKey, rate_limit=rate_limit))
+        output_file (str): Output file path for saving the results in JSON format.
         
-    print(f"[+] Analyzed {args.num} ETF{'s' if args.num != 1 else ''} and {'their' if args.num != 1 else 'its'} positions")
-    graph_communities = graph.detect_communities_louvain(etf_graph)
+    Returns:
+        nx.Graph: The ETF graph.
     
-    print(f"[+] Detected {len(graph_communities)} communities in the ETF graph")
+    Output:
+        The function prints the analysis results and saves them to a JSON file if specified.
+    """    
+    results = {}
+    etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(num_etf, FMPKey, rate_limit=rate_limit))
     
-    etf_types = graph.analyze_etf_types(etf_graph)
-    sentiment_by_etf_type = graph.sentiment_analysis_by_etf_type(etf_types)
-    bull = sentiment_by_etf_type['bullish']
-    bear = sentiment_by_etf_type['bearish']
-    
-    print(f"[+] Bull/Bear by ETF Type: {bull}/{bear} = {(bull / bear) if bear > 0 else 1.0 if bull > 0 else 0.0:.2f}")
-    
-    least_inclusions = graph.stocks_with_least_inclusions(etf_graph)
-    most_inclusions = graph.stocks_with_most_inclusions(etf_graph)
-    least_weight = graph.stocks_with_least_weight(etf_graph)
-    most_weight = graph.stocks_with_most_weight(etf_graph)
-    
-    top_10_most_weight_tuple = sorted(most_weight, key=lambda x: x[1], reverse=True)[:10]
-    top_10_least_weight_tuple = sorted(least_weight, key=lambda x: x[1])[:10]
-    top_10_most_inclusions_tuple = sorted(most_inclusions, key=lambda x: x[1], reverse=True)[:10]
-    top_10_least_inclusions_tuple = sorted(least_inclusions, key=lambda x: x[1])[:10]
-    
-    most_influential_tuple, least_influentia_tuple = graph.find_influential_stocks(etf_graph)
+    if etf_graph is None:
+        print("Failed to create graph. Exiting.")
+        return
 
-    most_influential = [stock for stock, centrality in most_influential_tuple]
-    least_influential = [stock for stock, centrality in least_influentia_tuple]
-    top_10_most_weight = [stock for stock, weight in top_10_most_weight_tuple]
-    top_10_least_weight = [stock for stock, weight in top_10_least_weight_tuple]
-    top_10_most_inclusions = [stock for stock, inclusions in top_10_most_inclusions_tuple]
-    top_10_least_inclusions = [stock for stock, inclusions in top_10_least_inclusions_tuple]
-    
-    
-    
-    print(f"[+] Top 10 most influential stocks: {most_influential}")
-    print(f"[+] Top 10 least influential stocks: {least_influential}")
-    print(f"[+] Top 10 stocks with the most weight: {top_10_most_weight}")
-    print(f"[+] Top 10 stocks with the least weight: {top_10_least_weight}")
-    print(f"[+] Top 10 stocks with the most inclusions: {top_10_most_inclusions}")
-    print(f"[+] Top 10 stocks with the least inclusions: {top_10_least_inclusions}")
-    
+    communities = graph.detect_communities_louvain(etf_graph)
+    community_size = {com: len([node for node in communities if communities[node] == com]) for com in set(communities.values())}
+    largest_communities = sorted(community_size.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    community_results = {}
+    print("[+] Analyzing top 5 largest communities:")
+    for com, size in largest_communities:
+        print(f"  Community {com} with {size} members")
+        community_nodes = [node for node in etf_graph.nodes() if communities[node] == com]
+        stock_weights = {node: sum(data['weight'] for u, v, data in etf_graph.edges(node, data=True) if etf_graph.nodes[u]['type'] == 'Stock' or etf_graph.nodes[v]['type'] == 'Stock') for node in community_nodes if etf_graph.nodes[node]['type'] == 'Stock'}
+        top_stocks = sorted(stock_weights.items(), key=lambda item: item[1], reverse=True)[:10]
+        community_results[com] = top_stocks
+        print(f"  Top 10 stocks in Community {com}:")
+        for stock, weight in top_stocks:
+            print(f"    {stock}: {weight:.2f}")
+    results['community_analysis'] = community_results
+
+    etf_types = graph.analyze_etf_types(etf_graph)
+    sentiment_scores = graph.sentiment_analysis_by_etf_type(etf_types)
+    results['sentiment'] = sentiment_scores
+
+    most_weight = graph.stocks_with_most_weight(etf_graph)[:10]
+    most_inclusions = graph.stocks_with_most_inclusions(etf_graph)[:10]
+    pagerank_scores = graph.perform_pagerank(etf_graph)
+    top_pagerank = sorted(pagerank_scores.items(), key=lambda item: item[1], reverse=True)[:10]
+
+    results['top_stocks_by_weight'] = most_weight
+    results['top_stocks_by_inclusion'] = most_inclusions
+    results['top_stocks_by_pagerank'] = top_pagerank
+
+    if output_file:
+        with open(output_file, 'w') as f:
+            json.dump(results, f, indent=4)
+        print(f"[+] Results saved to {output_file}")
+        return etf_graph
+
     if display:
-        print(f"[+] Visualizing ETF graph...")
-        viz.plot_graph(etf_graph, graph_communities)
-        
+        print("[+] Visualizing ETF graph...")
+        viz.plot_graph(etf_graph, communities)
+        return etf_graph
+
+    return etf_graph
+  
 if __name__ == '__main__':
     load_dotenv()
 
     parser = argparse.ArgumentParser(description="ETF Position Graph Analysis Tool")
     parser.add_argument('-n', '--num', type=int, help='The number of ETFs to analyze, if not provided all will be used', default=-1)
-    parser.add_argument('-d', '--display', action='store_true', help='Display the graph visualization')
+    parser.add_argument('-d', '--display', action='store_true', help='Display the graph visualization', default=False)
     parser.add_argument('-r', '--rate_limit', type=int, help='The rate limit for API requests (default 150/minute)', default=150)
+    parser.add_argument('-o', '--output', type=str, help='Output file path for saving the results in JSON format')
+    parser.add_argument('-g', '--save_graph', type=str, help='Output file path for saving the graph in pickle format')
     args = parser.parse_args()
     
     FMPKey = os.getenv("FMPKey")
-    
     if FMPKey is None:
-        print("FMPKey not found")
+        print("FMPKey not found. Exiting.")
         exit(-1)
-        
-    init_etfgraph(args.display, args.rate_limit)
+
+    G = init_etfgraph(args.num, args.display, args.rate_limit, args.output)
+    
+    if args.save_graph:
+        print(f"[+] Saving graph to {args.save_graph}")
+        pickle.dump(G, open(args.save_graph, 'wb'))

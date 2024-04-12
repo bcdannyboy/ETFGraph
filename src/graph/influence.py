@@ -26,3 +26,21 @@ def find_influential_stocks(G):
     top_least_influential = sorted_stocks[-10:]
     
     return top_most_influential, top_least_influential
+
+def perform_pagerank(G):
+    """
+    Perform PageRank analysis to determine the importance of stocks in the graph.
+    
+    Args:
+        G (nx.Graph): A NetworkX graph of stocks and ETFs.
+        
+    Returns:
+        dict: A dictionary containing stocks and their PageRank scores.
+    """
+    # Compute PageRank
+    pagerank_scores = nx.pagerank(G, weight='weight')
+    
+    # Filter PageRank to include only stock nodes
+    stock_pagerank = {node: score for node, score in pagerank_scores.items() if G.nodes[node]['type'] == 'Stock'}
+    
+    return stock_pagerank
