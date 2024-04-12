@@ -11,6 +11,7 @@ ETFGraph requires a Financial Modeling Prep API key to access financial data for
 - [x] Pull Data & Generate Graph
 - [x] Graph Visualization
 - [x] Community Detection / Clustering
+- [x] Centrality Analysis
 - [ ] PageRank Analysis
 - [ ] ETF Similarity Analysis
 - [x] Link Analysis
