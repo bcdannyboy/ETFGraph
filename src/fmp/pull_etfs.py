@@ -30,8 +30,8 @@ def fetch_etf_holdings(etf, fmp_key):
     Fetches holdings for a specific ETF and returns the data.
     """
     
-    with semaphore as s:
-        s.acquire()  # Ensure we don't exceed the rate limit
+    
+    semaphore.acquire()  # Ensure we don't exceed the rate limit
 
     holdings_url = f"https://financialmodelingprep.com/api/v3/etf-holder/{etf['symbol']}?apikey={fmp_key}"
     try:
