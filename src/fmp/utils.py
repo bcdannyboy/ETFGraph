@@ -7,7 +7,7 @@ def analyze_etf_attributes(etf_name):
     """
     # Patterns to identify leveraged ETFs
     leveraged_patterns = [
-        r'\b(?:2x|3x|4x|5x|2\.5x|3\.5x|double|triple|quad|quint)\b',
+        r'\b(?:2x|3x|4x|5x|2\.5x|3\.5x|double|triple|quad|quint|daily)\b',
         r'\b(?:leveraged|multiplier)\b',
     ]
     # Patterns to identify inversed ETFs
