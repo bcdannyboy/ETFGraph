@@ -4,17 +4,31 @@ import requests
 import sys
 import time
 import os
+from threading import Semaphore, Timer
 
 from .utils import analyze_etf_attributes
 
 RATE_LIMIT = 150  # Maximum requests per minute
+REQUEST_INTERVAL = 60 / RATE_LIMIT  # Interval between requests in seconds
 TIMEOUT = 10  # Timeout for HTTP requests in seconds
+
+# Create a semaphore that will allow a maximum of RATE_LIMIT tokens per minute
+semaphore = Semaphore(RATE_LIMIT)
+
+def release_semaphore():
+    """ Release a semaphore periodically """
+    while True:
+        try:
+            semaphore.release()
+            time.sleep(REQUEST_INTERVAL)
+        except Exception as e:
+            print(f"Error releasing semaphore: {e}")
 
 def fetch_etf_holdings(etf, fmp_key):
     """
     Fetches holdings for a specific ETF and returns the data.
     """
-    time.sleep(60/RATE_LIMIT)  # Sleep to ensure even distribution of requests
+    semaphore.acquire()  # Wait to acquire the semaphore
     holdings_url = f"https://financialmodelingprep.com/api/v3/etf-holder/{etf['symbol']}?apikey={fmp_key}"
     try:
         response = requests.get(holdings_url, timeout=TIMEOUT)
@@ -38,8 +52,6 @@ def pull_etf_positions(num, fmp_key, rate_limit=RATE_LIMIT):
     """
     Fetch ETF positions using a fixed number of threads, displaying progress and adhering to rate limits.
     """
-    
-    RATE_LIMIT = rate_limit
     list_url = f"https://financialmodelingprep.com/api/v3/etf/list?apikey={fmp_key}"
     response = requests.get(list_url, timeout=TIMEOUT)
     if response.status_code == 200:
@@ -50,9 +62,13 @@ def pull_etf_positions(num, fmp_key, rate_limit=RATE_LIMIT):
         total_etfs = len(etfs_to_analyze)
         etfs_processed = 0
 
-        print(f"[+] Starting ETF analysis at a rate of {RATE_LIMIT} requests per minute...")
+        print(f"[+] Starting ETF analysis at a rate of {rate_limit} requests per minute...")
         
-        with ThreadPoolExecutor(max_workers=os.cpu_count()*2) as executor:
+        # Start the timer to release semaphore periodically
+        timer = Timer(0, release_semaphore)
+        timer.start()
+        
+        with ThreadPoolExecutor(max_workers=min(10, os.cpu_count()*2)) as executor:
             futures = {executor.submit(fetch_etf_holdings, etf, fmp_key): etf for etf in etfs_to_analyze}
             for future in as_completed(futures):
                 etf_symbol, data = future.result()
@@ -63,6 +79,7 @@ def pull_etf_positions(num, fmp_key, rate_limit=RATE_LIMIT):
                 if data:
                     etf_details[etf_symbol] = data
 
+        timer.cancel()  # Stop the timer when done
         print("\n[+] Completed analysis for all ETFs.")
         return etf_details
     else:
