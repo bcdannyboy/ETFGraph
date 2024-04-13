@@ -5,6 +5,8 @@ import sys
 import argparse
 
 from dotenv import load_dotenv # type: ignore
+from cdlib import NodeClustering
+
 from src import fmp
 from src import graph
 from src import viz
@@ -40,7 +42,7 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, g
             print(f"Error loading the graph from file: {e}")
             return None
     else:
-        etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(num_etf, FMPKey, rate_limit=rate_limit))
+        etf_graph = graph.create_graph_from_fmp(fmp.pull_etf_positions(num_etf, os.getenv("FMPKey"), rate_limit=rate_limit))
         if etf_graph is None:
             print("Failed to create graph. Exiting.")
             return None
@@ -48,6 +50,8 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, g
     print("[+] ETF Graph created successfully.")
     print("[+] Detecting communities in the graph...")
     communities = graph.detect_communities_louvain(etf_graph)
+    overlapping_communities = graph.detect_communities_overlapping(etf_graph)
+
     community_size = {com: len([node for node in communities if communities[node] == com]) for com in set(communities.values())}
     largest_communities = sorted(community_size.items(), key=lambda x: x[1], reverse=True)[:5]
 
@@ -63,6 +67,34 @@ def init_etfgraph(num_etf=-1, display=False, rate_limit=150, output_file=None, g
         for stock, weight in top_stocks:
             print(f"    {stock}: {weight:.2f}")
     results['community_analysis'] = community_results
+
+    # Analyzing overlapping communities (only top 5 largest for consistency)
+    if overlapping_communities:
+        overlapping_community_sizes = {i: len(com) for i, com in enumerate(overlapping_communities.communities)}
+        largest_overlapping_communities = sorted(overlapping_community_sizes.items(), key=lambda x: x[1], reverse=True)[:5]
+        overlapping_community_results = {}
+        print("[+] Analyzing top 5 largest overlapping communities:")
+        for i, size in largest_overlapping_communities:
+            community = overlapping_communities.communities[i]
+            community_nodes = list(community)
+            stock_weights = {node: sum(data['weight'] for u, v, data in etf_graph.edges(node, data=True) if etf_graph.nodes[u]['type'] == 'Stock' or etf_graph.nodes[v]['type'] == 'Stock') for node in community_nodes if etf_graph.nodes[node]['type'] == 'Stock'}
+            top_stocks = sorted(stock_weights.items(), key=lambda item: item[1], reverse=True)[:10]
+            overlapping_community_results[i] = top_stocks
+            print(f"  Top 10 stocks in Overlapping Community {i}:")
+            for stock, weight in top_stocks:
+                print(f"    {stock}: {weight:.2f}")
+        results['overlapping_community_analysis'] = overlapping_community_results
+
+    # Deep community analysis (Modularity)
+    modularity_score = graph.community_modularity(etf_graph, communities)
+    results['modularity_score'] = modularity_score
+    print(f"[+] Louvain Modularity Score: {modularity_score}")
+
+    # For overlapping communities (already in NodeClustering format):
+    if isinstance(overlapping_communities, NodeClustering):
+        overlapping_modularity_score = graph.community_modularity(etf_graph, overlapping_communities)
+        results['overlapping_modularity_score'] = overlapping_modularity_score
+        print(f"[+] Overlapping Modularity Score: {overlapping_modularity_score}")
 
     etf_types = graph.analyze_etf_types(etf_graph)
     sentiment_scores = graph.sentiment_analysis_by_etf_type(etf_types)

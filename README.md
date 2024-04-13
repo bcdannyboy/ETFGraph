@@ -81,13 +81,15 @@ python main.py -n 100
 - [X] Basic Centrality Analysis
 - [X] PageRank Analysis
 - [X] Basic Link Analysis
-- [ ] Better Data Visualization
-- [ ] Overlapping community detection
+- [X] Overlapping community detection
+- [X] Community modularity analysis
 - [ ] Better leveraged / inverse indication
 - [ ] Better bull / bear indication
 - [ ] Deep community analysis
 - [ ] Graph structure sparcification
+- [ ] Community asset correlation
 - [ ] Price simulation / price calculation as part of graph weights
+- [ ] Better Data Visualization
 
 ### Contribute
 

@@ -4,3 +4,4 @@ python-louvain
 matplotlib
 networkx
 numpy
+cdlib[C]
